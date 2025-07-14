@@ -9,7 +9,7 @@ This project estimates how many songs you *really* know, based on your real-time
 
 We start with a curated database of ~10,000 songs from Spotify. These are **not** randomly selected:
 
-- Only include songs with popularity score ≥ 10 (to avoid complete obscurities. Popularity score is a very convenient and mysterious index assigned to each track by Spotify. For reference: my struggling artist friend from Argentina - not linked here - has songs with popularity scores ranging from 15-29).
+- Only include songs with popularity score ≥ 10 (This does 2 things: A. avoid complete obscurities. Popularity score is a very convenient and mysterious index assigned to each track by Spotify. For reference: my struggling artist friend from Argentina - not linked here - has songs with popularity scores ranging from 15-29). B. eliminate a known issues where a highly popular song gets included in an obscure anthology album and receives a score of 2
 - Genre is inherited from the artist’s top genre (for now).
 - Language is inferred from the title (for now) (to be impletemented).
 - Songs are bucketed into “eras” (e.g. 80s, 90s, 2000s) (to be implemented).
@@ -85,7 +85,7 @@ hitRate(popularity) = L / (1 + exp(-k * (x - x0)))
 Final estimate:
 
 ```js
-    estimated_songs_in_bin * your_hit_rate_in_bin
+    estimated_songs_in_bucket * your_hit_rate_in_bucket
 ```
 
 ---
