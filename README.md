@@ -82,22 +82,24 @@ hitRate(popularity) = L / (1 + exp(-k * (x - x0)))
 - `k`: slope
 - We fit `x0` and `k` using your data via gradient descent
 
-Final estimate:
-
 ```js
-    estimated_songs_in_bucket * your_hit_rate_in_bucket
+for (let x = 0; x <= 100; x++) {
+  let p = popularityDistribution[x]; // normalized to sum to 1
+  let fx = logistic(x);
+  final_estimation += fx * p;
+}
+final_estimation *= REALISTIC_UPPER_BOUND;
 ```
-
 ---
 
 ## Realistic Upper Bound
 
-Let’s say someone listens to music 2 hours a day for 30 years:
+Let’s say someone "actively" listens to music 2 hours a day for 30 years:
 
 - That’s ~1,314,000 minutes of listening
-- If each song averages 3.5 min and is heard ~10 times to be known → ~37,500 songs max
+- If each song averages 3.5 min and is heard ~10 times to be "known" → ~37,500 songs max
 
-We currently cap the total estimate around 30k as a sanity check.
+We currently cap the total estimate at 37,500.
 
 ---
 
