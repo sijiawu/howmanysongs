@@ -1,100 +1,110 @@
 
-# How Many Songs Do You Know?
+# How Many Songs
 
-This project aims to estimate how many songs a person "knows" — based on their real-time responses to a short quiz.
-
----
-
-## 📚 Dataset
-
-- **10,000 songs**
-- Songs have:
-  - **Popularity score ≥ 10** (based on Spotify’s API)
-  - **Genre** inferred from artist metadata (because Spotify API doesn't have a genre field in getTrack)
-- Bias: Slightly skewed toward "popular" music and global hits
+This project estimates how many songs you *really* know, based on your real-time self-reported responses to a short quiz.
 
 ---
 
-## 🧪 Quiz Setup
+## Song Bank
 
-Each new session pulls **100 songs** from the database:
+We start with a curated database of ~10,000 songs from Spotify. These are **not** randomly selected:
 
-### 🎯 70 Familiar-Tuned Songs
+- Only include songs with popularity score ≥ 10 (to avoid complete obscurities. Popularity score is a very convenient and mysterious index assigned to each track by Spotify. For reference: my struggling artist friend from Argentina - not linked here - has songs with popularity scores ranging from 15-29).
+- Genre is inherited from the artist’s top genre (for now).
+- Language is inferred from the title (for now) (to be impletemented).
+- Songs are bucketed into “eras” (e.g. 80s, 90s, 2000s) (to be implemented).
 
-Random songs across all popularity tiers where:
+The database is skewed toward "popular songs" because of the way the songs are sourced.
+---
 
-- `Genre ∈ familiarGenres`
-- `Language ∈ familiarLanguages`
-- `Era ∈ familiarEras`
+## Quiz Setup
 
-These songs help test **depth** — how deep your knowledge goes within the genres/languages/eras you are most exposed to.
+When a user starts the quiz, we pull a custom set of 100 songs from the DB with:
 
-### 🌍 30 Exploratory Songs
+### 70 Familiar Songs
+- Randomly sampled from **all popularity tiers**
+- Must match user’s selected:
+  - Genre(s)
+  - Language(s) (to be impletemented)
+  - Era(s) (to be impletemented)
 
-Songs with **popularity ≥ 63** (top 10% based on a 100k random pull), where **at least one** of the following is true:
+### 30 Exploration Songs
+- Each has popularity ≥ 63 (top ~10% in DB)
+- Chosen *outside* user's familiar categories:
+  - Genre, language, or era doesn't match
 
-- `Genre ∉ familiarGenres`
-- `Language ∉ familiarLanguages`
-- `Era ∉ familiarEras`
-
-These songs help test **breadth** — whether you recognize major hits from beyond your usual listening.
+This combo helps test both **depth** (how far down you go in familiar areas) and **breadth** (how far you reach into other areas).
 
 ---
 
-## 🧠 Adaptive “Next Song” Strategy
+## Adaptive Song Selection
 
-After each response, we dynamically score all remaining songs and choose the next most **informative** one.
+As the quiz goes on, we prioritize songs that give us the most new info.
+
+Each song gets a score based on:
 
 ```js
-explorationScore = (1 - familiarity) * norm(song.popularity);
-depthScore       = familiarity * (1 - norm(song.popularity));
+explorationScore = (1 - familiarity) * norm(song.popularity)
+depthScore = familiarity * (1 - norm(song.popularity))
 
-phase = responses.length / 30;
-
-score = (1 - phase) * explorationScore + phase * depthScore;
+phase = responses.length / 30
+score = (1 - phase) * explorationScore + phase * depthScore
 ```
 
-- **`norm(popularity)`** maps popularity scores into the [0, 1] range.
-- The quiz **starts exploratory** and gradually focuses on depth.
-
----
-
-## 🔍 Familiarity Score
-
-Each song is evaluated for how "familiar" it is to you:
+`familiarity` is calculated based on A - your initial selection and B - how often you say "YES" to songs in a given genre/language/era:
 
 ```js
-function getFamiliarity(song, genres, langs, eras) {
-  const g = genres[song.genre]?.ratio ?? 0.5;
-  const l = langs[song.language]?.ratio ?? 0.5;
-  const e = eras[song.era]?.ratio ?? 0.5;
-  return (g + l + e) / 3;
-}
-```
-
-- Ratios are computed based on your **previous responses**
-- Pre-quiz selections influence initial familiarity:
+familiarity = average of genreRatio, languageRatio, eraRatio
+// TODO: initial values:
   - 0.5 for user-selected categories
-  - 0.01 for unselected categories
-(to be implemented)
+  - 0.1 for unselected categories
+```
+
 ---
 
-## 📈 Estimating Total Songs
+## Estimation Model
 
-At the end of the quiz, your estimated known song count is calculated using a **logistic growth model**:
+This is the mathy part.
 
+We fit a **logistic curve** to your responses, for each genre you've encountered at least once.
+
+Because a logistic curve matches how recognition typically works:
+- You know nearly everything at the top
+- You know very little at the bottom
+- Somewhere in the middle is a slope where the hit rate drops fast
+
+It's modeled like this:
+
+```math
+hitRate(popularity) = L / (1 + exp(-k * (x - x0)))
 ```
-L = 30,000     // theoretical upper bound (e.g. a DJ or some other professional in the music industry)
-x0, k = fitted via gradient descent
+
+- `L`: the maximum hit rate (set to 1)
+- `x`: the song’s popularity
+- `x0`: the popularity score at which you know 50% of the songs
+- `k`: slope
+- We fit `x0` and `k` using your data via gradient descent
+
+Final estimate:
+```math
+Extrapolate over all genre-popularity bins:
+    estimated_songs_in_bin * your_hit_rate_in_bin
 ```
 
-### A realistic upper bound:
+---
 
-> If someone listens to music 2 hrs/day for 30 years (no overlaps), that’s ~1.3 million minutes.
->
-> With 3.5 min/song, repeated ~10x to "know" a song → ~37,500 songs.
->
+## Realistic Upper Bound
 
-A logistic curve is fitted for each genre you answered at least one question for.
+Let’s say someone listens to music 2 hours a day for 30 years:
 
+- That’s ~1,314,000 minutes of listening
+- If each song averages 3.5 min and is heard ~10 times to be known → ~37,500 songs max
 
+We currently cap the total estimate around 30k as a sanity check.
+
+---
+
+## Notes
+
+- This is all experimental!
+- still figuring out the best way to scale from your quiz to the universe of songs but this is where things are at for now.
