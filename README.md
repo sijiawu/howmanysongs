@@ -14,7 +14,6 @@ We start with a curated database of ~10,000 songs from Spotify. These are **not*
 - Language is inferred from the title (for now) (to be impletemented).
 - Songs are bucketed into “eras” (e.g. 80s, 90s, 2000s) (to be implemented).
 
-The database is skewed toward "popular songs" because of the way the songs are sourced.
 ---
 
 ## Quiz Setup
@@ -62,9 +61,7 @@ familiarity = average of genreRatio, languageRatio, eraRatio
 
 ---
 
-## Estimation Model
-
-This is the mathy part.
+## Estimation Model (the mathy part)
 
 We fit a **logistic curve** to your responses, for each genre you've encountered at least once.
 
@@ -86,8 +83,8 @@ hitRate(popularity) = L / (1 + exp(-k * (x - x0)))
 - We fit `x0` and `k` using your data via gradient descent
 
 Final estimate:
-```math
-Extrapolate over all genre-popularity bins:
+
+```js
     estimated_songs_in_bin * your_hit_rate_in_bin
 ```
 
