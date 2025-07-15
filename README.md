@@ -9,28 +9,27 @@ This project estimates how many songs you *really* know, based on your real-time
 
 We start with a curated database of ~10,000 songs from Spotify. These are **not** randomly selected:
 
-- Only include songs with popularity score ≥ 10 (This does 2 things: A. avoid complete obscurities. Popularity score is a very convenient and mysterious index assigned to each track by Spotify. For reference: my struggling artist friend from Argentina - not linked here - has songs with popularity scores ranging from 15-29). B. eliminate a known issues where a highly popular song gets included in an obscure anthology album and receives a score of 2
-- Genre is inherited from the artist’s top genre (for now).
-- Language is inferred from the title (for now) (to be impletemented).
-- Songs are bucketed into “eras” (e.g. 80s, 90s, 2000s) (to be implemented).
+- Only include songs with popularity score ≥ 10. This does 2 things: 
+    - Avoids complete obscurities. Popularity score is a very convenient and mysterious index (from 0 = most obscure to 100 = most popular) assigned to each track by Spotify. For reference: Billie Jean has a popularity score of 81 - [submithub.com/popularity-checker](https://www.submithub.com/popularity-checker?track=5ChkMS8OtdzJeqyybCc9R5) is one of many Spotify API wrappers to check this score, in case people don't want to run Postman or curl every time; at the other end of this scale, my struggling artist friend from Argentina - not linked here - has songs with popularity scores ranging from 15-29. 
+    - Eliminates known issues where a highly popular song gets included in an obscure compilation album and receives a score of 1 ([example: Take On Me gets a score of 1 in this "Various Artists" album](https://www.submithub.com/popularity-checker?track=3IsHapcQ9bDkJZO1g4aWoa))
 
+- Genre is inherited from the artist’s top genre (for now).
+- Songs are bucketed into “eras” (e.g. 80s, 90s, 2000s) (to be implemented).
 ---
 
 ## Quiz Setup
 
-When a user starts the quiz, we pull a custom set of 100 songs from the DB with:
+When a user starts the quiz, we pull a pre-filtered set of 100 songs from our DB with:
 
-### 70 Familiar Songs
-- Randomly sampled from **all popularity tiers**
+### 70 "Familiarity" Songs
+- Randomly sampled across **all popularity scores**
 - Must match user’s selected:
   - Genre(s)
-  - Language(s) (to be impletemented)
   - Era(s) (to be impletemented)
 
-### 30 Exploration Songs
+### 30 "Exploration" Songs
 - Each has popularity ≥ 63 (top ~10% in DB)
-- Chosen *outside* user's familiar categories:
-  - Genre, language, or era doesn't match
+- Chosen *outside* user's familiar genre/era categories:
 
 This combo helps test both **depth** (how far down you go in familiar areas) and **breadth** (how far you reach into other areas).
 
@@ -50,7 +49,7 @@ phase = responses.length / 30
 score = (1 - phase) * explorationScore + phase * depthScore
 ```
 
-`familiarity` is calculated based on A - your initial selection and B - how often you say "YES" to songs in a given genre/language/era:
+where `familiarity` is a score calculated based on A - your initial selection and B - how often you say "YES" to songs in a given genre/language/era:
 
 ```js
 familiarity = average of genreRatio, languageRatio, eraRatio
@@ -63,7 +62,7 @@ familiarity = average of genreRatio, languageRatio, eraRatio
 
 ## Estimation Model (the mathy part)
 
-We fit a **logistic curve** to your responses, for each genre you've encountered at least once.
+We fit a **logistic curve** to your responses for each genre you listen to.
 
 Because a logistic curve matches how recognition typically works:
 - You know nearly everything at the top
@@ -106,4 +105,4 @@ We currently cap the total estimate at 37,500.
 ## Notes
 
 - This is all experimental!
-- still figuring out the best way to scale from your quiz to the universe of songs but this is where things are at for now.
+- still figuring out the best way to scale but this is where things are at for now.
