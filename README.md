@@ -52,10 +52,13 @@ score = (1 - phase) * explorationScore + phase * depthScore
 where `familiarity` is a score calculated based on A - your initial selection and B - how often you say "YES" to songs in a given genre/language/era:
 
 ```js
-familiarity = average of genreRatio, languageRatio, eraRatio
-// TODO: initial values:
-  - 0.5 for user-selected categories
-  - 0.1 for unselected categories
+familiarity = TODO
+// Initial values are based on the likert scale:
+  - 0 if "not at all"
+  - 0.2 if "rarely"
+  - 0.4 if "sometimes"
+  - 0.6 if "very often"
+  - 0.8 if "all the time"
 ```
 
 ---
