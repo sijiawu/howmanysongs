@@ -49,23 +49,42 @@ phase = responses.length / 30
 score = (1 - phase) * explorationScore + phase * depthScore
 ```
 
-where `familiarity` is a score calculated based on A - your initial selection and B - how often you say "YES" to songs in a given genre/language/era:
+where `familiarity` is a score calculated dynamically based on A - your initial selection and B - how often you say "YES" to songs in a given genre:
 
 ```js
-familiarity = TODO
-// Initial values are based on the likert scale:
+// Initial familiarity[genre] values based on the likert scale:
   - 0 if "not at all"
   - 0.2 if "rarely"
   - 0.4 if "sometimes"
   - 0.6 if "very often"
   - 0.8 if "all the time"
+
+// Initial setup per genre
+genreStats[genre] = {
+  hits: 0,
+  total: 0,
+  prior: familiarity[genre] 
+}
+
+// After each user selection:
+function updateFamiliarity(genre, isKnown) {
+  const g = genreStats[genre]
+  g.total += 1
+  if (isKnown) g.hits += 1
+
+  // Apply weighted average of prior and observed rate
+  const weight = 5   // strength of the prior; to be adjusted
+  const smoothed = (g.hits + weight * g.prior) / (g.total + weight)
+
+  familiarity[genre] = smoothed
+}
 ```
 
 ---
 
-## Estimation Model (the mathy part)
+## Estimation Model
 
-We fit a **logistic curve** to your responses for each genre you listen to.
+At the end of the test, we fit a **logistic curve** to your responses for each genre you listen to.
 
 Because a logistic curve matches how recognition typically works:
 - You know nearly everything at the top
